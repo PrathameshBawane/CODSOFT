@@ -1,0 +1,68 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import LinearSVC
+from sklearn.metrics import accuracy_score, classification_report
+
+# Loading train data
+train_data = []
+with open('/content/train_data.txt', 'r') as file:
+    for line in file:
+        train_data.append(line.strip().split(' ::: '))
+
+train_df = pd.DataFrame(train_data, columns=['ID', 'Title', 'Genre', 'Description'])
+train_df
+# Loading test data
+test_data = []
+with open('test_data.txt', 'r') as file:
+    for line in file:
+        test_data.append(line.strip().split(' ::: '))
+
+test_df = pd.DataFrame(test_data, columns=['ID', 'Title', 'Description'])
+test_df
+# Loading test data solution
+test_solution_data = []
+with open('test_data_solution.txt', 'r') as file:
+    for line in file:
+        test_solution_data.append(line.strip().split(' ::: '))
+
+test_solution_df = pd.DataFrame(test_solution_data, columns=['ID', 'Title', 'Genre', 'Description'])
+test_solution_df
+train_df['Text'] = train_df['Title'] + " " + train_df['Description']
+test_df['Text'] = test_df['Title'] + " " + test_df['Description']
+vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
+X_train = vectorizer.fit_transform(train_df['Text'])
+X_train
+X_test = vectorizer.transform(test_df['Text'])
+X_test
+y_train = train_df['Genre']
+y_train
+clf = LinearSVC()
+clf
+# Training the classifier
+clf.fit(X_train, y_train)
+
+# Predicting genres for test data
+y_test_pred = clf.predict(X_test)
+y_test_pred
+# True labels from test solution
+y_test_true = test_solution_df['Genre']
+y_test_true
+# Evaluate the model
+accuracy = accuracy_score(y_test_true, y_test_pred)
+accuracy
+report = classification_report(y_test_true, y_test_pred)
+report
+print(f"Accuracy: {accuracy}")
+print("Classification Report:")
+print(report)
+test_predictions = clf.predict(X_test)
+test_predictions
+# Save the predictions to a file
+test_df['Predicted_Genre'] = test_predictions
+test_df.to_csv('/content/test_predictions.txt', index=False)
+with open('test_predictions.csv', 'r') as file:
+    data = file.read()
+data = data.replace(',', ' ::: ')
+with open('test_predictions.txt', 'w') as file:
+    file.write(data)
+    data
