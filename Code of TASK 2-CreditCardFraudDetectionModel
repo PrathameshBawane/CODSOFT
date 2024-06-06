@@ -1,0 +1,82 @@
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+
+# Loading the datasets
+train_df = pd.read_csv(r'C:/Users/Asus/Downloads/archive (3)/fraudTrain.csv')
+print(train_df)
+
+test_df = pd.read_csv(r'C:/Users/Asus/Downloads/archive (3)/fraudTest.csv')
+print(test_df)
+
+# Converting 'trans_date_trans_time' to datetime and extract useful features
+def preprocess_datetime(df, column_name):
+    df[column_name] = pd.to_datetime(df[column_name])
+    df['trans_year'] = df[column_name].dt.year
+    df['trans_month'] = df[column_name].dt.month
+    df['trans_day'] = df[column_name].dt.day
+    df['trans_hour'] = df[column_name].dt.hour
+    df.drop(columns=[column_name], inplace=True)
+    return df
+
+train_df = preprocess_datetime(train_df, 'trans_date_trans_time')
+print(train_df)
+
+test_df = preprocess_datetime(test_df, 'trans_date_trans_time')
+print(test_df)
+
+# Dropping non-numeric and identifier columns
+drop_columns = ['Unnamed: 0', 'trans_num', 'cc_num', 'first', 'last', 'street', 'city', 'state', 'dob', 'job']
+train_df.drop(columns=drop_columns, inplace=True)
+test_df.drop(columns=drop_columns, inplace=True)
+
+# Encoding categorical variables
+label_encoder = LabelEncoder()
+categorical_columns = ['merchant', 'category', 'gender']
+
+for column in categorical_columns:
+    train_df[column] = label_encoder.fit_transform(train_df[column])
+    test_df[column] = label_encoder.transform(test_df[column])
+
+   
+X_train = train_df.drop(columns=['is_fraud'])
+y_train = train_df['is_fraud']
+X_test = test_df.drop(columns=['is_fraud'])
+y_test = test_df['is_fraud']
+
+# Creating the Decision Tree classifier
+clf = DecisionTreeClassifier(random_state=0)
+print(clf)
+
+# Model Training
+clf.fit(X_train, y_train)
+
+# Model Predictions
+y_pred = clf.predict(X_test)
+
+# Model evaluation
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+cm = confusion_matrix(y_test, y_pred)
+
+evaluation_metrics = {
+    'Accuracy': accuracy,
+    'Precision': precision,
+    'Recall': recall,
+    'F1 Score': f1
+}
+print(evaluation_metrics)
+
+# Plotting the confusion matrix
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix')
+plt.show()
